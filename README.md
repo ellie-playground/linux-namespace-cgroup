@@ -70,6 +70,48 @@ CPU, 메모리, 디스크 I/O 등 시스템 자원을 효율적으로 제한해 
 
 가상 이더넷(veth: virtual ethernet) 쌍은 네임스페이스 간 통신을 구성할 때 사용된다. veth는 두 개의 가상 네트워크 인터페이스로, 한쪽에서 전송한 패킷이 곧바로 다른쪽에 수신된다. 이를 이용하면 한쪽 인터페이스를 컨테이너의 네트워크 네임스페이스에, 다른쪽을 호스트나 다른 컨테이너 네임스페이스에 연결해 컨테이너와 호스트 간 또는 컨테이너 간에 네트워크 통신을 설정할 수 있다.
 
+# namespace와 cgroup 실습해보기
+
+## 현재 존재하는 namespace 살펴보기
+
+```bash
+ubuntu@ip-172-31-210-192:~$ lsns
+        NS TYPE   NPROCS   PID USER   COMMAND
+4026531834 time        2  1485 ubuntu -bash
+4026531835 cgroup      2  1485 ubuntu -bash
+4026531836 pid         2  1485 ubuntu -bash
+4026531837 user        2  1485 ubuntu -bash
+4026531838 uts         2  1485 ubuntu -bash
+4026531839 ipc         2  1485 ubuntu -bash
+4026531840 net         2  1485 ubuntu -bash
+4026531841 mnt         2  1485 ubuntu -bash
+```
+
+- 리눅스에서 `lsns (List System namespace)` 명령어를 사용하면 현재 존재하는 namespace를 볼 수 있다.
+- `lsns` 명령은 `/proc` 파일 시스템을 읽어 결과를 반환하는데, 일반 사용자가 실행한 결과와 루트 사용자가 실행한 결과가 다르다.
+
+## unshare
+
+- 별도의 namespace를 생성할 수 있다.
+- 부모와 공유하지 않는 namespace 공간에 프로그램을 실행할 때 사용하는 명령어이다.
+- 자식 프로세스가 `fork()`에 의해 생성되면서 부모 메모리 주소와는 별개의 가상 메모리 주소를 할당받는 Copy-on-Write 방식으로 설정을 상속받는다.
+
+### Copy On Write
+
+- 부모와 자식 프로세스가 서로 다른 가상 메모리 공간을 할당받지만, 같은 물리 메모리 공간을 참조한다.
+- 자식 프로세스에서 변경 사항이 없는 경우 같은 물리 메모리 공간만을 사용한다.
+- 자식 프로세스에서 값을 변경하게 되면, 수정이 발생한 내용만 별도의 물리 메모리 공간에 저장한다.
+- 변경이 발생하지 않은 데이터는 부모와 같은 메모리 공간을 참고하고, 변경된 부분은 새로 할당받은 물리 메모리 공간을 참조한다.
+
+# 참고 자료
+
+- https://insight.infograb.net/blog/2025/04/09/linux-container/
+- https://anweh.tistory.com/67
+- https://dennis.k8s.kr/10
+- https://tech.ssut.me/what-even-is-a-container/
+- https://csj000714.tistory.com/655
+- [https://wariua.github.io/man-pages-ko/unshare(2)/](https://wariua.github.io/man-pages-ko/unshare%282%29/)
+
 # 참고 자료
 
 - https://insight.infograb.net/blog/2025/04/09/linux-container/
