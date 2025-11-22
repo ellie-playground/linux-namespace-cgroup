@@ -75,26 +75,50 @@ CPU, 메모리, 디스크 I/O 등 시스템 자원을 효율적으로 제한해 
 ## 현재 존재하는 namespace 살펴보기
 
 ```bash
-ubuntu@ip-172-31-210-192:~$ lsns
+ubuntu@ip-172-31-84-252:~$ lsns
         NS TYPE   NPROCS   PID USER   COMMAND
-4026531834 time        2  1485 ubuntu -bash
-4026531835 cgroup      2  1485 ubuntu -bash
-4026531836 pid         2  1485 ubuntu -bash
-4026531837 user        2  1485 ubuntu -bash
-4026531838 uts         2  1485 ubuntu -bash
-4026531839 ipc         2  1485 ubuntu -bash
-4026531840 net         2  1485 ubuntu -bash
-4026531841 mnt         2  1485 ubuntu -bash
+4026531834 time        2  1417 ubuntu -bash
+4026531835 cgroup      2  1417 ubuntu -bash
+4026531836 pid         2  1417 ubuntu -bash
+4026531837 user        2  1417 ubuntu -bash
+4026531838 uts         2  1417 ubuntu -bash
+4026531839 ipc         2  1417 ubuntu -bash
+4026531840 net         2  1417 ubuntu -bash
+4026531841 mnt         2  1417 ubuntu -bash
+```
+
+```java
+ubuntu@ip-172-31-84-252:~$ sudo lsns
+        NS TYPE   NPROCS   PID USER            COMMAND
+4026531834 time      113     1 root            /sbin/init
+4026531835 cgroup    113     1 root            /sbin/init
+4026531836 pid       113     1 root            /sbin/init
+4026531837 user      113     1 root            /sbin/init
+4026531838 uts       107     1 root            /sbin/init
+4026531839 ipc       113     1 root            /sbin/init
+4026531840 net       113     1 root            /sbin/init
+4026531841 mnt       104     1 root            /sbin/init
+4026532224 mnt         1   198 root            ├─/usr/lib/systemd/systemd-udevd
+4026532225 uts         1   198 root            ├─/usr/lib/systemd/systemd-udevd
+4026532236 mnt         1   323 systemd-resolve ├─/usr/lib/systemd/systemd-resolved
+4026532239 mnt         1   512 systemd-network ├─/usr/lib/systemd/systemd-networkd
+4026532240 uts         1   692 syslog          ├─/usr/sbin/rsyslogd -n -iNONE
+4026532241 mnt         2   780 _chrony         ├─/usr/sbin/chronyd -F 1
+4026532242 mnt         1   588 polkitd         ├─/usr/lib/polkit-1/polkitd --no-debug
+4026532243 uts         2   780 _chrony         ├─/usr/sbin/chronyd -F 1
+4026532244 uts         1   588 polkitd         ├─/usr/lib/polkit-1/polkitd --no-debug
+4026532298 mnt         1   632 root            ├─/usr/lib/systemd/systemd-logind
+4026532299 uts         1   632 root            ├─/usr/lib/systemd/systemd-logind
+4026532305 mnt         1   855 root            └─/usr/sbin/ModemManager
+4026531862 mnt         1    23 root            kdevtmpfs
 ```
 
 - 리눅스에서 `lsns (List System namespace)` 명령어를 사용하면 현재 존재하는 namespace를 볼 수 있다.
-- `lsns` 명령은 `/proc` 파일 시스템을 읽어 결과를 반환하는데, 일반 사용자가 실행한 결과와 루트 사용자가 실행한 결과가 다르다.
+- `lsns` 명령은 `/proc` 파일 시스템을 읽어 결과를 반환하는데, 일반 사용자가 실행한 결과와 루트 사용자가 실행한 결과가 다르다. (왜?)
 
 ## unshare
 
-- 별도의 namespace를 생성할 수 있다.
-- 부모와 공유하지 않는 namespace 공간에 프로그램을 실행할 때 사용하는 명령어이다.
-- 자식 프로세스가 `fork()`에 의해 생성되면서 부모 메모리 주소와는 별개의 가상 메모리 주소를 할당받는 Copy-on-Write 방식으로 설정을 상속받는다.
+`unshare` 명령어를 사용하면 별도의 namespace를 생성할 수 있다. **`unshare` 명령은 부모와 공유하지 않는 namespace 공간에 프로그램을 실행할 때 사용하는 명령어다.** 자식 프로세스가 `fork()` 에 의해 생성되면서 부모 메모리 주소와는 별개의 가상 메모리 주소를 할당받는 copy-on-write 방식으로 설정을 상속받는다.
 
 ### Copy On Write
 
@@ -103,6 +127,151 @@ ubuntu@ip-172-31-210-192:~$ lsns
 - 자식 프로세스에서 값을 변경하게 되면, 수정이 발생한 내용만 별도의 물리 메모리 공간에 저장한다.
 - 변경이 발생하지 않은 데이터는 부모와 같은 메모리 공간을 참고하고, 변경된 부분은 새로 할당받은 물리 메모리 공간을 참조한다.
 
+## uts namespace 격리
+
+Unix Timesharing System (UTS) Namespace는 유닉스 시분할 시스템으로, 시스템의 호스트 이름과 도메인을 분리해주는 공간이다. 프로세스를 추가로 생성한 후, uts namespace에 할당한 다음 호스트 이름을 변경하면, 새로 격리된 namespace 안에 적용되기 때문에 호스트 단말기의 호스트 이름은 변하지 않는다.
+
+1. 호스트 단말기의 hostname 확인
+    
+    ```java
+    ubuntu@ip-172-31-84-252:~$ hostname
+    ip-172-31-84-252
+    ```
+    
+2. uts namespace 생성 후 bash shell 실행
+    
+    ```java
+    ubuntu@ip-172-31-84-252:~$ sudo unshare --uts bash
+    root@ip-172-31-84-252:/home/ubuntu# hostname
+    ip-172-31-84-252
+    ```
+    
+    - 새로운 uts namespace를 생성한 후, 그 안에서 bash shell을 실행하면 현재 시스템과 분리된 새로운 hostname 공간을 가진 Bash shell을 실행한다.
+3. hostname 변경
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# hostname new
+    root@ip-172-31-84-252:/home/ubuntu# hostname
+    new
+    ```
+    
+4. 리눅스 터미널 추가 후 namespace 확인
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# sudo lsns -t uts
+    sudo: unable to resolve host new: Temporary failure in name resolution
+            NS TYPE NPROCS   PID USER    COMMAND
+    4026531838 uts     100     1 root    /sbin/init
+    4026532225 uts       1   198 root    ├─/usr/lib/systemd/systemd-udevd
+    4026532240 uts       1   692 syslog  ├─/usr/sbin/rsyslogd -n -iNONE
+    4026532243 uts       2   780 _chrony ├─/usr/sbin/chronyd -F 1
+    4026532244 uts       1   588 polkitd ├─/usr/lib/polkit-1/polkitd --no-debug
+    4026532299 uts       1   632 root    └─/usr/lib/systemd/systemd-logind
+    4026532245 uts       4  1485 root    bash
+    ```
+    
+5. bash shell 종료 후 hostname 확인
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# exit
+    exit
+    ubuntu@ip-172-31-84-252:~$ hostname
+    ip-172-31-84-252
+    ```
+    
+
+## pid namespace 격리
+
+process id도 별도의 namespace를 생성하면 호스트 단말기에서 사용중인 다른 프로세스들과 격리되어 구성된다.
+
+1. pid namespace 생성
+    
+    ```java
+    ubuntu@ip-172-31-84-252:~$ sudo unshare --pid --fork bash
+    root@ip-172-31-84-252:/home/ubuntu# 
+    ```
+    
+2. namespace 확인
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# sudo lsns -t pid
+            NS TYPE NPROCS   PID USER COMMAND
+    4026531836 pid     108     1 root /sbin/init
+    4026532245 pid       4  1519 root bash
+    ```
+    
+3. namespace 내부의 프로세스 목록 조회
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# ps -aux
+    fatal library error, lookup self
+    ```
+    
+    - 실행 시 오류가 발생하는데, pid namespace를 분리했지만, `/proc` 을 새 네임스페이스에 마운트하지 않았기 때문에 발생한 오류이다.
+    - `sudo unshare --pid --fork bash` 만 실행할 경우, pid namespace는 분리되지만, `/proc` 은 여전히 부모 네임스페이스의 `/proc` 을 바라보고 있다.
+4. `chroot` 테스트용 신규 루트 디렉토리 생성
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu# mkdir new_root_directory
+    root@ip-172-31-84-252:/home/ubuntu# cd new_root_directory/
+    ```
+    
+5. 리눅스 파일 시스템 구성
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu/new_root_directory# ls
+    alpine.tar.gz  dev  home  media  opt   root  sbin  sys  usr
+    bin            etc  lib   mnt    proc  run   srv   tmp  var
+    ```
+    
+6. pid namespace 생성 및 chroot 적용
+    
+    ```java
+    root@ip-172-31-84-252:/home/ubuntu/new_root_directory# sudo unshare --pid --fork chroot ./new_root_directory sh
+    chroot: cannot change root directory to './new_root_directory': No such file or directory
+    root@ip-172-31-84-252:/home/ubuntu/new_root_directory# cd ..
+    root@ip-172-31-84-252:/home/ubuntu# sudo unshare --pid --fork chroot ./new_root_directory sh
+    / # ls
+    alpine.tar.gz  home           opt            sbin           usr
+    bin            lib            proc           srv            var
+    dev            media          root           sys
+    etc            mnt            run            tmp
+    / # ps
+    PID   USER     TIME  COMMAND
+    / # ls proc
+    ```
+    
+    - 최초 chroot 적용 후 프로세스 목록을 조회하면, `/proc` 폴더가 비어있기 때문에 아무것도 조회되지 않는다.
+    - 커널이 해당 디렉터리에 프로세스 정보를 채우게 하려면 proc 타입의 파일 시스템을 mount 해줘야 한다.
+7. proc 타입 파일 시스템 마운트 후 프로세스 목록 조회
+    
+    ```java
+    / # mount -t proc proc proc
+    / # ls proc
+    1                  fb                 locks              swaps
+    6                  filesystems        mdstat             sys
+    acpi               fs                 meminfo            sysrq-trigger
+    bootconfig         interrupts         misc               sysvipc
+    buddyinfo          iomem              modules            thread-self
+    bus                ioports            mounts             timer_list
+    cgroups            irq                mtrr               tty
+    cmdline            kallsyms           net                uptime
+    consoles           kcore              pagetypeinfo       version
+    cpuinfo            key-users          partitions         version_signature
+    crypto             keys               pressure           vmallocinfo
+    devices            kmsg               schedstat          vmstat
+    diskstats          kpagecgroup        scsi               xen
+    dma                kpagecount         self               zoneinfo
+    driver             kpageflags         slabinfo
+    dynamic_debug      latency_stats      softirqs
+    execdomains        loadavg            stat
+    / # ps
+    PID   USER     TIME  COMMAND
+        1 root      0:00 sh
+        7 root      0:00 ps
+    ```
+    
+
 # 참고 자료
 
 - https://insight.infograb.net/blog/2025/04/09/linux-container/
@@ -110,12 +279,5 @@ ubuntu@ip-172-31-210-192:~$ lsns
 - https://dennis.k8s.kr/10
 - https://tech.ssut.me/what-even-is-a-container/
 - https://csj000714.tistory.com/655
-- [https://wariua.github.io/man-pages-ko/unshare(2)/](https://wariua.github.io/man-pages-ko/unshare%282%29/)
-
-# 참고 자료
-
-- https://insight.infograb.net/blog/2025/04/09/linux-container/
-- https://anweh.tistory.com/67
-- https://dennis.k8s.kr/10
-- https://tech.ssut.me/what-even-is-a-container/
-- https://csj000714.tistory.com/655
+- https://man7.org/linux/man-pages/man1/unshare.1.html
+- https://engineer-diarybook.tistory.com/entry/Linux-namespace
