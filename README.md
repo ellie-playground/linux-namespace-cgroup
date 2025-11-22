@@ -129,7 +129,7 @@ ubuntu@ip-172-31-84-252:~$ sudo lsns
 
 ## uts namespace 격리
 
-Unix Timesharing System (UTS) Namespace는 유닉스 시분할 시스템으로, 시스템의 호스트 이름과 도메인을 분리해주는 공간이다. 프로세스를 추가로 생성한 후, uts namespace에 할당한 다음 호스트 이름을 변경하면, 새로 격리된 namespace 안에 적용되기 때문에 호스트 단말기의 호스트 이름은 변하지 않는다.
+**Unix Timesharing System (UTS) Namespace는 유닉스 시분할 시스템으로, 시스템의 호스트 이름과 도메인을 분리해주는 공간이다.** 프로세스를 추가로 생성한 후, uts namespace에 할당한 다음 호스트 이름을 변경하면, 새로 격리된 namespace 안에 적용되기 때문에 호스트 단말기의 호스트 이름은 변하지 않는다.
 
 1. 호스트 단말기의 hostname 확인
     
@@ -184,6 +184,35 @@ Unix Timesharing System (UTS) Namespace는 유닉스 시분할 시스템으로, 
 
 process id도 별도의 namespace를 생성하면 호스트 단말기에서 사용중인 다른 프로세스들과 격리되어 구성된다.
 
+- PID (Process ID)는 운영체제가 각 프로세스를 고유하게 식별하기 위해 부여하는 숫자 ID이다. 프로세스가 시작될 때 운영체제에 의해 자동으로 할당되며, 프로세스가 종료되면 해당 PID는 재사용될 수 있다.
+    
+    ```bash
+    # 실행중인 프로세스들을 트리 형태로 보여준다.
+    # 루트 프로세스에 위치한 systemd가 바로 PID 1번의 init 시스템이다.
+    ubuntu@ip-172-31-84-252:~$ pstree
+    systemd─┬─ModemManager───3*[{ModemManager}]
+            ├─acpid
+            ├─2*[agetty]
+            ├─amazon-ssm-agen───6*[{amazon-ssm-agen}]
+            ├─chronyd───chronyd
+            ├─cron
+            ├─dbus-daemon
+            ├─multipathd───6*[{multipathd}]
+            ├─networkd-dispat
+            ├─polkitd───3*[{polkitd}]
+            ├─rsyslogd───3*[{rsyslogd}]
+            ├─snapd───9*[{snapd}]
+            ├─sshd───sshd───sshd───bash───pstree
+            ├─systemd───(sd-pam)
+            ├─systemd-journal
+            ├─systemd-logind
+            ├─systemd-network
+            ├─systemd-resolve
+            ├─systemd-udevd
+            ├─udisksd───5*[{udisksd}]
+            └─unattended-upgr───{unattended-upgr}
+    ```
+    
 1. pid namespace 생성
     
     ```java
@@ -216,6 +245,7 @@ process id도 별도의 namespace를 생성하면 호스트 단말기에서 사�
     root@ip-172-31-84-252:/home/ubuntu# cd new_root_directory/
     ```
     
+    - `chroot` 는 change root directory의 줄임말로, 리눅스는 `chroot` 시스템 콜을 통해 **프로세스의 루트 디렉터리를 변경할 수 있다. 이를 활용하면 특정 디렉터리를 루트(/)처럼 인식하게 만들 수 있으며, 컨테이너는 이러한 기능을 통해 자신만의 파일 시스템 루트를 가지게 된다.**
 5. 리눅스 파일 시스템 구성
     
     ```java
@@ -271,6 +301,8 @@ process id도 별도의 namespace를 생성하면 호스트 단말기에서 사�
         7 root      0:00 ps
     ```
     
+
+## Docker 컨테이너 내부에서 PID 확인해보기
 
 # 참고 자료
 
