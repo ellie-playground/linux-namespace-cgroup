@@ -302,7 +302,44 @@ process id도 별도의 namespace를 생성하면 호스트 단말기에서 사�
         1 root      0:00 sh
         7 root      0:00 ps
     ```
+
+## NET namespace 격리
+
+NET namespace는 **컨테이너가 고유한 네트워크 인터페이스, IP 주소, 라우팅 테이블, 포트 등 네트워크 스택 전반을 독립적으로 소유하도록 하여, 네트워크 자원 측면에서의 완전한 격리를 제공**한다. 이를 통해 하나의 물리 서버에서 여러 컨테이너가 각각 자신만의 가상 네트워크 환경을 구성하고, 다른 컨테이너나 호스트와 충돌 없이 통신하거나 완전히 차단된 상태로 동작할 수 있다.
+
+### Network Interface
+
+네트워크 인터페이스는 컴퓨터 시스템이 외부 네트워크와 통신하기 위해 사용하는 가상의 통신 창구 또는 장치를 의미한다. 쉽게 말해, 운영체제 안에서 네트워크를 통해 데이터를 주고받는 입출력 통로라고 할 수 있다.
+
+리눅스와 같은 운영체제에서는 eth0, lo 등과 같은 이름으로 네트워크 인터페이스가 표현되며, 각각의 인터페이스는 MAC 주소, IP 주소, MTU(최대 전송 단위) 등의 속성을 가지고 있다. 이러한 속성들은 해당 인터페이스가 데이터를 어떻게 송수신 할 지를 결정하는 중요한 기준이 된다.
+
+**인터페이스 정보 확인하기**
+
+```bash
+ubuntu@ip-172-31-84-252:~$ ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enX0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 02:70:14:39:a2:29 brd ff:ff:ff:ff:ff:ff
+3: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN mode DEFAULT group default 
+    link/ether ba:1b:b2:51:ec:ee brd ff:ff:ff:ff:ff:ff
+```
+
+### NET namespace 실습하기
+
+1. veth 생성
     
+    ```bash
+    ubuntu@ip-172-31-84-252:~$ sudo ip link add veth0 type veth peer name veth1
+    ubuntu@ip-172-31-84-252:~$ ip -br link
+    lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+    enX0             UP             02:70:14:39:a2:29 <BROADCAST,MULTICAST,UP,LOWER_UP> 
+    docker0          DOWN           ba:1b:b2:51:ec:ee <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+    veth1@veth0      DOWN           8a:4f:ea:80:26:82 <BROADCAST,MULTICAST,M-DOWN> 
+    veth0@veth1      DOWN           06:8e:bc:d0:28:67 <BROADCAST,MULTICAST,M-DOWN> 
+    ```
+    
+    리눅스에서는 가상의 인터페이스를 veth(Virtual Ethernet Device) 라고 부르며, ip 명령어로 생성할 수 있다. veth는 항상 쌍(pair)으로 만들어진다.
 
 # 참고 자료
 
