@@ -1,6 +1,6 @@
 # 컨테이너의 격리 환경 동작 원리
 
-<img width="711" height="274" alt="image" src="https://github.com/user-attachments/assets/3682b075-97ed-4fca-aa84-314bcb809b23" />
+<img width="711" height="274" alt="image" src="https://github.com/user-attachments/assets/4ac67340-d845-470e-af0f-ca73ede5eafd" />
 
 https://anweh.tistory.com/67
 
@@ -16,7 +16,7 @@ Container는 hypervisor와 완전히 다르다. hypervisor는 OS 및 커널이 �
 
 # namespace와 cgroup
 
-<img width="1280" height="1078" alt="image" src="https://github.com/user-attachments/assets/b31a1506-2b2b-4951-bea4-e119a8b67367" />
+<img width="1280" height="1078" alt="image" src="https://github.com/user-attachments/assets/060d4682-d572-474b-b37e-f342dd8a920c" />
 
 
 ## namespace
@@ -42,7 +42,8 @@ VM은 각 게스트 머신별로 독립적인 공간을 제공하고 서로 충�
 
 ### namespace isolation
 
-<img width="941" height="678" alt="image" src="https://github.com/user-attachments/assets/5ec83e50-f757-4c29-98de-214eb4083570" />
+<img width="941" height="678" alt="image" src="https://github.com/user-attachments/assets/b4186e6a-11cb-48f4-ad85-b78bf0fc4efd" />
+
 
 https://csj000714.tistory.com/655
 
@@ -54,7 +55,7 @@ namespace는 nested process tree를 만들 수 있게 하는데, 이는 **각 �
 
 ## cgroups (Control Groups)
 
-<img width="640" height="300" alt="image" src="https://github.com/user-attachments/assets/fc626203-03af-4aed-b25a-222bb852b3ba" />
+<img width="640" height="300" alt="image" src="https://github.com/user-attachments/assets/bcabb98d-a473-4c43-bfe0-63323f7faab4" />
 
 https://anweh.tistory.com/67
 
@@ -114,7 +115,8 @@ ubuntu@ip-172-31-84-252:~$ sudo lsns
 ```
 
 - 리눅스에서 `lsns (List System namespace)` 명령어를 사용하면 현재 존재하는 namespace를 볼 수 있다.
-- `lsns` 명령은 `/proc` 파일 시스템을 읽어 결과를 반환하는데, 일반 사용자가 실행한 결과와 루트 사용자가 실행한 결과가 다르다. (왜?)
+- `lsns` 명령은 `/proc` 파일 시스템을 읽어 결과를 반환하는데, 일반 사용자가 실행한 결과와 루트 사용자가 실행한 결과가 다르다.
+    - 일반 사용자는 `/proc/{pid}` 중 자신이 소유한 프로세스만 볼 수 있고, root 사용자는 모든 프로세스의 `/proc/{pid}`를 볼 수 있기 때문이다.
 
 ## unshare
 
@@ -301,8 +303,6 @@ process id도 별도의 namespace를 생성하면 호스트 단말기에서 사�
         7 root      0:00 ps
     ```
     
-
-## Docker 컨테이너 내부에서 PID 확인해보기
 
 # 참고 자료
 
